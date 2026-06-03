@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Three.js renderer, camera, lights
+// Three.js renderer, camera, lights (bloom)
 // Bloom post-processing pipeline
 // ------------------------------------------------------------
 

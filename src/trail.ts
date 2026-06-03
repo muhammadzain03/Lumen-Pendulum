@@ -83,11 +83,11 @@ export class Trail {
 
       const t = i * invN; // 0 = oldest, 1 = newest
 
-      // Cyan-ish glow that brightens toward the tip
-      dc[i * 4]     = 0.2 + 0.8 * t;  // R: starts dim, ramps up near tip.
-      dc[i * 4 + 1] = 0.6 + 0.4 * t;  // G: stays high to keep cyan tone.
-      dc[i * 4 + 2] = 1.0;             // B: pinned to max for electric-blue glow.
-      dc[i * 4 + 3] = t * t;           // A: quadratic fade keeps tail soft, tip bright.
+      // Purple-to-cyan gradient: tail is deep blue/purple, tip is bright cyan/white.
+      dc[i * 4]     = 0.4 + 0.6 * t;        // R: low at tail, high at tip.
+      dc[i * 4 + 1] = 0.2 + 0.5 * t;        // G: stays mid for cyan tone at tip.
+      dc[i * 4 + 2] = 0.9;                   // B: pinned high for electric-blue throughout.
+      dc[i * 4 + 3] = Math.pow(t, 1.8);      // A: softer fade than pure quadratic — more visible tail.
     }
 
     // Signal Three.js that the existing buffers have new data - no new objects created.

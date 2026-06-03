@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Triple-pendulum physics (Lagrangian mechanics + RK4 integration)
+// Triple-pendulum physics (Lagrangian mechanics + RK4 integration, EOM)
 //
 // Angles are ABSOLUTE - each measured from the downward vertical.
 // The state vector is [θ1, θ2, θ3, ω1, ω2, ω3].

@@ -1,4 +1,7 @@
-*,
+* {
+  box-sizing: border-box;
+}
+
 *::before,
 *::after {
   box-sizing: border-box;
@@ -17,4 +20,91 @@ body {
   display: block;
   width: 100%;
   height: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
+
+body.loaded #canvas {
+  opacity: 1;
+}
+
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #02040a;
+  transition: opacity 0.4s ease, visibility 0.4s;
+}
+
+#loader .spinner {
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(136, 204, 255, 0.2);
+  border-top-color: #88ccff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+body.loaded #loader {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.overlay {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  pointer-events: none;
+  color: #c8d8e8;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.overlay h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.overlay p {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+
+#fps {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10;
+  pointer-events: none;
+  color: #c8d8e8;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
+  opacity: 0;
+  letter-spacing: 0.03em;
+  transition: opacity 0.5s ease 0.15s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body.loaded #fps {
+  opacity: 0.75;
+}
+
+#fps.good { color: #7fd4a0; opacity: 0.9; }
+#fps.ok   { color: #e8c87a; opacity: 0.9; }
+#fps.bad  { color: #e87a7a; opacity: 0.9; }

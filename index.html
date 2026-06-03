@@ -3,10 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A real-time triple pendulum simulation with RK4 physics and glowing motion trails. Watch deterministic chaos unfold in the browser." />
+
     <title>Lumen Pendulum</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/Lumen-Pendulum/favicon.svg" />
+    <link rel="apple-touch-icon" href="/Lumen-Pendulum/preview.jpg" />
+
+    <!-- Open Graph (Facebook, LinkedIn, Discord) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lumen Pendulum" />
+    <meta property="og:description" content="A real-time triple pendulum simulation with RK4 physics and glowing motion trails." />
+    <meta property="og:url" content="https://muhammadzain03.github.io/Lumen-Pendulum/" />
+    <meta property="og:image" content="https://muhammadzain03.github.io/Lumen-Pendulum/preview.jpg" />
+    <meta property="og:image:alt" content="Lumen Pendulum — chaotic triple pendulum with glowing trail" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Lumen Pendulum" />
+    <meta name="twitter:description" content="A real-time triple pendulum simulation with RK4 physics and glowing motion trails." />
+    <meta name="twitter:image" content="https://muhammadzain03.github.io/Lumen-Pendulum/preview.jpg" />
   </head>
   <body>
+    <div id="loader" aria-hidden="true">
+      <div class="spinner"></div>
+    </div>
+    <div class="overlay">
+      <h1>Lumen Pendulum</h1>
+      <p>Triple Pendulum chaos in real time</p>
+    </div>
     <canvas id="canvas"></canvas>
+    <div id="fps">-- FPS</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
