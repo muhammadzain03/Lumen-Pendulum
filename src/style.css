@@ -22,6 +22,12 @@ body {
   height: 100%;
   opacity: 0;
   transition: opacity 0.5s ease;
+  touch-action: none;
+  cursor: grab;
+}
+
+#canvas.dragging {
+  cursor: grabbing;
 }
 
 body.loaded #canvas {

@@ -53,6 +53,36 @@ function solve3x3(M: number[][], b: number[]): [number, number, number] {
   return [x[0], x[1], x[2]];
 }
 
+function solveSub(
+  M: number[][],
+  F: number[],
+  start: number,
+): [number, number, number] {
+  // Solve only the lower-right sub-block of the system (rows/cols start..2).
+  // Used when the upper arms are held fixed by the drag handle - the lower
+  // arms then behave like a pendulum hanging from the held joint.
+  const acc: [number, number, number] = [0, 0, 0];
+  const size = 3 - start;
+
+  if (size === 1) {
+    const m = M[start][start];
+    acc[start] = Math.abs(m) < 1e-12 ? 0 : F[start] / m;
+  } else if (size === 2) {
+    const a = M[start][start];
+    const b = M[start][start + 1];
+    const c = M[start + 1][start];
+    const d = M[start + 1][start + 1];
+    const det = a * d - b * c;
+    if (Math.abs(det) < 1e-12) return acc;
+    const e = F[start];
+    const f = F[start + 1];
+    acc[start] = (e * d - b * f) / det;
+    acc[start + 1] = (a * f - e * c) / det;
+  }
+
+  return acc;
+}
+
 // ---- equations of motion ---------------------------------------------------
 //
 // Derived from the Lagrangian of a planar triple pendulum with absolute angles.
@@ -61,16 +91,16 @@ function solve3x3(M: number[][], b: number[]): [number, number, number] {
 // and F contains gravitational + centripetal / Coriolis terms.
 //
 // Notation:
-//   mT_i  = total mass hanging from pivot i  (m_i + m_{i+1} + …)
+//   mT_i  = total mass hanging from pivot i  (m_i + m_{i+1} + ...)
 //   l_i   = length of arm i
-//   θ_ij  = θ_i − θ_j
+//   θ_ij  = θ_i - θ_j
 // ---------------------------------------------------------------------------
 
-function computeAccelerations(
+function buildSystem(
   params: PendulumParams,
   angles: [number, number, number],
   velocities: [number, number, number],
-): [number, number, number] {
+): { M: number[][]; F: number[] } {
   const { lengths: [l1, l2, l3], masses: [m1, m2, m3], g } = params;
 
   const [t1, t2, t3] = angles;
@@ -112,7 +142,29 @@ function computeAccelerations(
       + m3 * l2 * l3 * w2 * w2 * s23,
   ];
 
+  return { M, F };
+}
+
+function computeAccelerations(
+  params: PendulumParams,
+  angles: [number, number, number],
+  velocities: [number, number, number],
+): [number, number, number] {
+  const { M, F } = buildSystem(params, angles, velocities);
   return solve3x3(M, F);
+}
+
+function computeConstrainedAccelerations(
+  params: PendulumParams,
+  angles: [number, number, number],
+  velocities: [number, number, number],
+  freeStart: number,
+): [number, number, number] {
+  // Upper arms are held by the drag handle: their velocities are zero, so the
+  // coupling terms they contribute to F vanish and the lower arms reduce to a
+  // free-hanging sub-pendulum. We solve only that lower sub-block.
+  const { M, F } = buildSystem(params, angles, velocities);
+  return solveSub(M, F, freeStart);
 }
 
 // ---- RK4 integrator --------------------------------------------------------
@@ -140,6 +192,39 @@ function rk4Step(params: PendulumParams, y: Vec6, dt: number): Vec6 {
   const k2 = derivatives(params, addVec(y, k1, dt / 2));
   const k3 = derivatives(params, addVec(y, k2, dt / 2));
   const k4 = derivatives(params, addVec(y, k3, dt));
+
+  return [
+    y[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+    y[1] + (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
+    y[2] + (dt / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]),
+    y[3] + (dt / 6) * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]),
+    y[4] + (dt / 6) * (k1[4] + 2 * k2[4] + 2 * k3[4] + k4[4]),
+    y[5] + (dt / 6) * (k1[5] + 2 * k2[5] + 2 * k3[5] + k4[5]),
+  ];
+}
+
+// ---- constrained integrator (used while dragging) --------------------------
+//
+// Arms with index < freeStart are held fixed (their angle is set by the IK
+// drag handle). Only arms freeStart..2 evolve, hanging freely under gravity.
+
+function derivativesConstrained(
+  params: PendulumParams,
+  y: Vec6,
+  freeStart: number,
+): Vec6 {
+  const angles: [number, number, number] = [y[0], y[1], y[2]];
+  const velocities: [number, number, number] = [y[3], y[4], y[5]];
+  for (let i = 0; i < freeStart; i++) velocities[i] = 0; // held arms don't move
+  const [a1, a2, a3] = computeConstrainedAccelerations(params, angles, velocities, freeStart);
+  return [velocities[0], velocities[1], velocities[2], a1, a2, a3];
+}
+
+function rk4StepConstrained(params: PendulumParams, y: Vec6, dt: number, freeStart: number): Vec6 {
+  const k1 = derivativesConstrained(params, y, freeStart);
+  const k2 = derivativesConstrained(params, addVec(y, k1, dt / 2), freeStart);
+  const k3 = derivativesConstrained(params, addVec(y, k2, dt / 2), freeStart);
+  const k4 = derivativesConstrained(params, addVec(y, k3, dt), freeStart);
 
   return [
     y[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
@@ -182,6 +267,31 @@ export class PhysicsEngine {
 
     this.state.angles = [y[0], y[1], y[2]];
     this.state.velocities = [y[3], y[4], y[5]];
+  }
+
+  /**
+   * Advance only the arms at index >= freeStart, treating the arms above them
+   * as a fixed support. Used while a joint is being dragged: the held joint
+   * acts as a pivot and the links below it swing freely under gravity.
+   */
+  updateConstrained(dt: number, freeStart: number): void {
+    if (freeStart >= 3) return; // tip grabbed - nothing hangs below it
+
+    const h = dt / this.subSteps;
+    let y: Vec6 = [
+      ...this.state.angles,
+      ...this.state.velocities,
+    ] as Vec6;
+
+    for (let i = 0; i < this.subSteps; i++) {
+      y = rk4StepConstrained(this.params, y, h, freeStart);
+    }
+
+    // Only write back the free arms; held arms stay as the IK handle set them.
+    for (let i = freeStart; i < 3; i++) {
+      this.state.angles[i] = y[i];
+      this.state.velocities[i] = y[i + 3];
+    }
   }
 
   /**

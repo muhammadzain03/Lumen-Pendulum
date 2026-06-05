@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
 // trail.ts
-// Fixed-Capacity ring buffer of tip posiion
-// Fading/glowing line geometry
-// ------------------------------------------------------------
+// Fixed-capacity ring buffer of tip positions.
+// Fading / glowing line geometry.
+// ---------------------------------------------------------------------------
 
 import * as THREE from 'three';
 
@@ -62,6 +62,12 @@ export class Trail {
     this.rebuildDrawOrder();
   }
 
+  clear(): void {
+    this.head = 0;    // Ring buffer writes index back to start
+    this.count = 0;   // No stored points 
+    this.geometry.setDrawRange(0, 0);   // GPU draws zero vertices -> trail invisible
+  }
+
   /**
    * Reorder ring buffer into chronological order within the pre-allocated
    * draw arrays and recompute per-vertex color/alpha gradient.
@@ -87,7 +93,7 @@ export class Trail {
       dc[i * 4]     = 0.4 + 0.6 * t;        // R: low at tail, high at tip.
       dc[i * 4 + 1] = 0.2 + 0.5 * t;        // G: stays mid for cyan tone at tip.
       dc[i * 4 + 2] = 0.9;                   // B: pinned high for electric-blue throughout.
-      dc[i * 4 + 3] = Math.pow(t, 1.8);      // A: softer fade than pure quadratic — more visible tail.
+      dc[i * 4 + 3] = Math.pow(t, 1.8);      // A: softer fade than pure quadratic - more visible tail.
     }
 
     // Signal Three.js that the existing buffers have new data - no new objects created.
